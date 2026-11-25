@@ -11,7 +11,8 @@
  *   - "vt"       : VirusTotal (free API key: define YOURLS_SCAN_VT_KEY in config.php)
  * The scanned URL is never fetched by this server: only its address is sent to those services.
  *
- * Settings (config.php): YOURLS_URL_SCAN (bool, default true), YOURLS_SCAN_GSB_KEY, YOURLS_SCAN_VT_KEY.
+ * Settings: the admin page "Scan settings" (admin/scan-settings.php), or constants in config.php which take precedence:
+ * YOURLS_URL_SCAN (bool, default true), YOURLS_SCAN_GSB_KEY, YOURLS_SCAN_VT_KEY.
  * Results are cached in a small table created on first use (like link metadata).
  */
 
@@ -21,8 +22,35 @@
  * @return bool
  */
 function yourls_scan_enabled():bool {
-    $enabled = !defined( 'YOURLS_URL_SCAN' ) || (bool) YOURLS_URL_SCAN;
+    if( defined( 'YOURLS_URL_SCAN' ) ) {
+        $enabled = (bool) YOURLS_URL_SCAN;                      // config.php wins
+    } else {
+        $enabled = yourls_get_option( 'scan_enabled', '1' ) !== '0'; // settings page, default on
+    }
     return (bool) yourls_apply_filter( 'scan_enabled', $enabled );
+}
+
+/**
+ * API key of a scan service: constant in config.php (wins) or value saved in the settings page
+ *
+ * @param  string $service  gsb | vt
+ * @return array            [ key, source ] where source is 'config', 'saved' or '' (not set)
+ */
+function yourls_scan_key_info( $service ):array {
+    $const = [ 'gsb' => 'YOURLS_SCAN_GSB_KEY', 'vt' => 'YOURLS_SCAN_VT_KEY' ][ $service ] ?? '';
+    if( $const && defined( $const ) && constant( $const ) ) {
+        return [ (string) constant( $const ), 'config' ];
+    }
+    $saved = (string) yourls_get_option( 'scan_' . $service . '_key', '' );
+    return $saved !== '' ? [ $saved, 'saved' ] : [ '', '' ];
+}
+
+/**
+ * @param  string $service  gsb | vt
+ * @return string           API key, or empty string
+ */
+function yourls_scan_key( $service ):string {
+    return yourls_scan_key_info( $service )[0];
 }
 
 /**
@@ -32,10 +60,10 @@ function yourls_scan_enabled():bool {
  */
 function yourls_scan_checks():array {
     $checks = [ 'heuristic' => yourls__( 'Analyzing the address (structure, protocol, risky patterns)' ) ];
-    if( defined( 'YOURLS_SCAN_GSB_KEY' ) && YOURLS_SCAN_GSB_KEY ) {
+    if( yourls_scan_key( 'gsb' ) !== '' ) {
         $checks['gsb'] = yourls__( 'Checking Google Safe Browsing (malware, phishing, unwanted software)' );
     }
-    if( defined( 'YOURLS_SCAN_VT_KEY' ) && YOURLS_SCAN_VT_KEY ) {
+    if( yourls_scan_key( 'vt' ) !== '' ) {
         $checks['vt'] = yourls__( 'Scanning with VirusTotal (70+ security engines)' );
     }
     return yourls_apply_filter( 'scan_checks', $checks );
@@ -182,7 +210,7 @@ function yourls_scan_gsb( $url ):array {
         ],
     ] );
     $response = yourls_http_post(
-        'https://safebrowsing.googleapis.com/v4/threatMatches:find?key=' . rawurlencode( YOURLS_SCAN_GSB_KEY ),
+        'https://safebrowsing.googleapis.com/v4/threatMatches:find?key=' . rawurlencode( yourls_scan_key( 'gsb' ) ),
         [ 'Content-Type' => 'application/json' ],
         $body,
         [ 'timeout' => 8 ]
@@ -230,7 +258,7 @@ function yourls_scan_vt_verdict( array $stats ):array {
  */
 function yourls_scan_vt_call( $method, $path, $data = [] ) {
     $url     = 'https://www.virustotal.com/api/v3/' . $path;
-    $headers = [ 'x-apikey' => YOURLS_SCAN_VT_KEY, 'accept' => 'application/json' ];
+    $headers = [ 'x-apikey' => yourls_scan_key( 'vt' ), 'accept' => 'application/json' ];
     $options = [ 'timeout' => 8 ];
     $response = ( $method === 'POST' ) ? yourls_http_post( $url, $headers, $data, $options ) : yourls_http_get( $url, $headers, $data, $options );
     if( !is_object( $response ) || !isset( $response->status_code ) ) {
@@ -379,7 +407,6 @@ function yourls_scan_page( $keyword, $url ) {
 </head>
 <body>
 <main class="scan-card" id="scan" data-config="<?php echo yourls_esc_attr( json_encode( $config ) ); ?>">
-    <div class="scan-logo"><img src="<?php echo yourls_site_url( false ); ?>/images/yourls-logo.svg" alt="YOURLS" /></div>
     <div class="scan-status" id="scan-status" aria-live="polite">
         <div class="scan-icon" id="scan-icon"><span class="spinner"></span></div>
         <h1 id="scan-title"><?php yourls_e( 'Scanning the link…' ); ?></h1>
@@ -403,9 +430,39 @@ function yourls_scan_page( $keyword, $url ) {
     <noscript>
         <p class="scan-noscript"><?php yourls_e( 'JavaScript is required to scan this link.' ); ?> <a href="<?php echo yourls_esc_url( $url ); ?>" rel="noopener noreferrer nofollow"><?php yourls_e( 'Continue without scanning' ); ?></a></p>
     </noscript>
-    <p class="scan-foot"><?php echo yourls_s( 'Protected by %s', '<a href="http://yourls.org/">YOURLS</a>' ); ?></p>
+    <p class="scan-foot"><?php echo yourls_scan_footer_text(); ?></p>
 </main>
 </body>
 </html>
     <?php
+}
+
+// Admin menu entry
+yourls_add_filter( 'admin_links', function( $links ) {
+    if( yourls_is_admin() ) {
+        $links['scan_settings'] = [
+            'url'    => yourls_admin_url( 'scan-settings.php' ),
+            'anchor' => yourls__( 'Scan settings' ),
+        ];
+    }
+    return $links;
+} );
+
+/**
+ * Text shown at the bottom of the scan page, naming the services actually used
+ *
+ * @return string  HTML
+ */
+function yourls_scan_footer_text():string {
+    $names = [];
+    if( yourls_scan_key( 'gsb' ) !== '' ) {
+        $names[] = '<a href="https://safebrowsing.google.com/" target="_blank" rel="noopener">Google Safe Browsing</a>';
+    }
+    if( yourls_scan_key( 'vt' ) !== '' ) {
+        $names[] = '<a href="https://www.virustotal.com/" target="_blank" rel="noopener">VirusTotal</a>';
+    }
+    if( !$names ) {
+        return yourls_s( 'Protected by %s', 'YOURLS' );
+    }
+    return yourls_s( 'Protected by %s', implode( ' ' . yourls__( 'and' ) . ' ', $names ) );
 }
