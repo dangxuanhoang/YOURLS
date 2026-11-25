@@ -75,3 +75,10 @@ details.guide a.button { display: inline-block; text-decoration: none; padding: 
 	.ss-savebar span { display: none; }
 	.ss-savebar .button { width: 100%; }
 }
+
+/* Per-provider switch */
+.svc-side { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; }
+.svc-switch { width: 46px; height: 26px; }
+.svc-switch .slider::before { width: 20px; height: 20px; }
+.svc-switch input:checked + .slider::before { transform: translateX(20px); }
+.svc-state { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; }
