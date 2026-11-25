@@ -18,6 +18,7 @@ if( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
     }
 
     foreach( [ 'gsb' => 'Google Safe Browsing', 'vt' => 'VirusTotal' ] as $service => $name ) {
+        yourls_update_option( 'scan_' . $service . '_enabled', empty( $_POST[ $service . '_enabled' ] ) ? '0' : '1' );
         $option = 'scan_' . $service . '_key';
         if( !empty( $_POST[ $service . '_clear' ] ) ) {
             yourls_delete_option( $option );
@@ -89,6 +90,10 @@ foreach( $services as $id => $svc ) {
     $infos[ $id ] = yourls_scan_key_info( $id );
 }
 $is_on = yourls_scan_enabled();
+$active = [];
+foreach( $services as $id => $svc ) {
+    $active[ $id ] = yourls_scan_provider_enabled( $id );
+}
 ?>
 
 <main role="main" class="scan-settings">
@@ -105,7 +110,7 @@ $is_on = yourls_scan_enabled();
             <span class="chip <?php echo $is_on ? 'on' : 'off'; ?>"><i></i><?php echo $is_on ? yourls__( 'Scan page: on' ) : yourls__( 'Scan page: off' ); ?></span>
             <span class="chip on"><i></i><?php yourls_e( 'Address checks' ); ?></span>
             <?php foreach( $services as $id => $svc ) { ?>
-            <span class="chip <?php echo $infos[ $id ][1] === '' ? 'off' : 'on'; ?>"><i></i><?php echo yourls_esc_html( $svc['name'] ); ?></span>
+            <span class="chip <?php echo $active[ $id ] ? 'on' : 'off'; ?>"><i></i><?php echo yourls_esc_html( $svc['name'] ); ?></span>
             <?php } ?>
         </div>
     </section>
@@ -138,7 +143,14 @@ $is_on = yourls_scan_enabled();
                     <h3><?php echo yourls_esc_html( $svc['name'] ); ?></h3>
                     <p class="svc-desc"><?php echo yourls_esc_html( $svc['desc'] ); ?></p>
                 </div>
-                <span class="badge badge-<?php echo $source === '' ? 'off' : 'on'; ?>"><?php echo yourls_esc_html( $source_labels[ $source ] ); ?></span>
+                <div class="svc-side">
+                    <span class="badge badge-<?php echo $source === '' ? 'off' : 'on'; ?>"><?php echo yourls_esc_html( $source_labels[ $source ] ); ?></span>
+                    <label class="switch svc-switch" title="<?php yourls_e( 'Use this provider in scans' ); ?>">
+                        <input type="checkbox" name="<?php echo $id; ?>_enabled" value="1" <?php echo yourls_get_option( 'scan_' . $id . '_enabled', '1' ) !== '0' ? 'checked' : ''; ?> />
+                        <span class="slider"></span>
+                    </label>
+                    <small class="svc-state"><?php echo $active[ $id ] ? yourls__( 'Active' ) : ( $source === '' ? yourls__( 'Needs a key' ) : yourls__( 'Disabled' ) ); ?></small>
+                </div>
             </div>
 
             <label class="field-label" for="<?php echo $id; ?>_key"><?php yourls_e( 'API key' ); ?></label>
@@ -165,7 +177,7 @@ $is_on = yourls_scan_enabled();
         <?php } ?>
 
         <div class="ss-savebar">
-            <span><?php yourls_e( 'Changes apply immediately to every short link.' ); ?></span>
+            <span><?php yourls_e( 'Turn on both providers to scan with both; with one on, only that one is used. Changes apply immediately to every short link.' ); ?></span>
             <input type="submit" class="button primary" value="<?php yourls_e( 'Save settings' ); ?>" />
         </div>
     </form>

@@ -48,3 +48,11 @@ a { color: var(--brand-dark); }
 .state-ok .scan-bar { background: var(--ok); }
 .state-warn .scan-bar { background: var(--warn); }
 .state-threat .scan-bar { background: var(--bad); }
+
+/* Language switch EN | VI */
+.scan-lang { display: inline-flex; float: right; padding: 3px; border-radius: 999px; background: var(--bg); border: 1px solid var(--border); }
+.scan-lang button { border: 0; background: transparent; color: var(--muted); font: 800 12px/1 system-ui, sans-serif; letter-spacing: .5px; padding: 7px 12px; border-radius: 999px; cursor: pointer; }
+.scan-lang button[aria-pressed="true"] { background: var(--brand); color: #fff; box-shadow: 0 2px 8px rgba(99,102,241,.4); }
+@media (prefers-color-scheme: dark) { .scan-lang button[aria-pressed="true"] { color: #0f172a; } }
+.scan-lang button:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.scan-status { clear: both; }
