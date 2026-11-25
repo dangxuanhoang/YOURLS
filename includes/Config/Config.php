@@ -230,6 +230,10 @@ class Config {
         if (!defined( 'YOURLS_DB_TABLE_META' ))
             define( 'YOURLS_DB_TABLE_META', YOURLS_DB_PREFIX.'url_meta' );
 
+        // table to cache malicious URL scan results, created on first use
+        if (!defined( 'YOURLS_DB_TABLE_SCAN' ))
+            define( 'YOURLS_DB_TABLE_SCAN', YOURLS_DB_PREFIX.'url_scan' );
+
         // if set to true, verbose debug infos
         if (!defined( 'YOURLS_DEBUG' )) {
             define('YOURLS_DEBUG', false);

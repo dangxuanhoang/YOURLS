@@ -23,6 +23,11 @@ if( $url = yourls_get_keyword_longurl( $keyword ) ) {
         yourls_link_preview_page( $keyword, $url );
         return;
     }
+    // Visitors: show the malicious URL scan page first (it counts the click), the visitor then continues to the long URL
+    if( yourls_scan_enabled() && yourls_apply_filter( 'scan_enabled_for_link', true, $keyword, $url ) ) {
+        yourls_scan_page( $keyword, $url );
+        return;
+    }
     yourls_redirect_shorturl($url, $keyword);
     return;
 }

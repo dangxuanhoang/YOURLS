@@ -37,7 +37,7 @@ function yourls_html_layout_phase( $set = null ): int {
  * @return bool
  */
 function yourls_html_context_has_sidebar( string $context ): bool {
-    $with = [ 'index', 'bookmark', 'infos', 'plugins', 'tools', 'upgrade', 'help' ];
+    $with = [ 'index', 'bookmark', 'infos', 'plugins', 'tools', 'upgrade', 'help', 'scan_settings' ];
     return in_array( $context, $with, true ) || str_starts_with( $context, 'plugin_page_' );
 }
 

@@ -51,6 +51,20 @@ switch( $action ) {
         echo json_encode(array('success'=>$query));
         break;
 
+    case 'scan_test':
+        yourls_verify_nonce( 'scan_settings', $_REQUEST['nonce'], false, 'omg error' );
+        $service = ( $_REQUEST['service'] ?? '' ) === 'vt' ? 'vt' : 'gsb';
+        if( yourls_scan_key( $service ) === '' ) {
+            $result = yourls_scan_result( 'error', yourls__( 'No API key saved yet' ) );
+        } else {
+            $result = $service === 'vt' ? yourls_scan_vt( 'https://example.com/' ) : yourls_scan_gsb( 'https://example.com/' );
+            if( $result['status'] === 'pending' ) {
+                $result = yourls_scan_result( 'ok', yourls__( 'API key accepted' ) );
+            }
+        }
+        echo json_encode( $result );
+        break;
+
     default:
         yourls_do_action( 'yourls_ajax_'.$action );
 

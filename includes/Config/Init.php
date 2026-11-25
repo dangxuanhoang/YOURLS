@@ -203,6 +203,7 @@ class Init {
         require_once YOURLS_INC.'/functions-http.php';
         require_once YOURLS_INC.'/functions-infos.php';
         require_once YOURLS_INC.'/functions-meta.php';
+        require_once YOURLS_INC.'/functions-scan.php';
         require_once YOURLS_INC.'/functions-deprecated.php';
         require_once YOURLS_INC.'/functions-auth.php';
         require_once YOURLS_INC.'/functions-upgrade.php';
