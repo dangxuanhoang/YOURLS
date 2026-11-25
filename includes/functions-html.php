@@ -37,7 +37,7 @@ function yourls_html_layout_phase( $set = null ): int {
  * @return bool
  */
 function yourls_html_context_has_sidebar( string $context ): bool {
-    $with = [ 'index', 'bookmark', 'infos', 'plugins', 'tools', 'upgrade' ];
+    $with = [ 'index', 'bookmark', 'infos', 'plugins', 'tools', 'upgrade', 'help' ];
     return in_array( $context, $with, true ) || str_starts_with( $context, 'plugin_page_' );
 }
 
@@ -511,7 +511,7 @@ function yourls_html_pagination( array $params = [] ):string {
     if( isset( $params['search_text'] ) ) {
         $params['search'] = $params['search_text'];
     }
-    unset( $params['search_text'], $params['total_pages'] );
+    unset( $params['search_text'], $params['total_pages'], $params['summary_html'] );
 
     $base_page = yourls_admin_url( 'index.php' );
     $link_to   = function( $n ) use ( $params, $base_page ) {
@@ -579,6 +579,9 @@ function yourls_html_tfooter( array $params = [] ):void {
             <div id="pagination">
                 <?php echo yourls_html_pagination( $params ); ?>
             </div>
+            <?php if( !empty( $params['summary_html'] ) ) { ?>
+            <div class="table-summary"><?php echo $params['summary_html']; ?></div>
+            <?php } ?>
             </th>
         </tr>
         <?php yourls_do_action( 'html_tfooter' ); ?>
@@ -1058,7 +1061,7 @@ function yourls_html_menu() {
     } else {
         $logout_link = yourls_apply_filter( 'logout_link', '' );
     }
-    $help_link   = yourls_apply_filter( 'help_link',   '<a href="' . yourls_site_url( false ) .'/readme.html">' . yourls__( 'Help' ) . '</a>' );
+    $help_link   = yourls_apply_filter( 'help_link',   '<a href="' . yourls_admin_url( 'help.php' ) . '">' . yourls__( 'Help' ) . '</a>' );
 
     $admin_links    = array();
     $admin_sublinks = array();
