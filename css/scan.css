@@ -1,0 +1,51 @@
+/* Trang quét URL độc hại: trang công khai dành cho khách truy cập (không dùng layout admin) */
+:root { --bg:#f1f5f9; --card:#fff; --text:#0b1220; --muted:#334155; --border:#e2e8f0; --brand:#6366f1; --brand-dark:#3730a3; --ok:#059669; --warn:#d97706; --bad:#dc2626; --track:#e2e8f0; color-scheme: light dark; }
+@media (prefers-color-scheme: dark) { :root { --bg:#121d36; --card:#182642; --text:#f8fafc; --muted:#dbe4f5; --border:#34497a; --brand:#818cf8; --brand-dark:#c7d2fe; --ok:#34d399; --warn:#fbbf24; --bad:#f87171; --track:#283d68; } }
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 16px; background: var(--bg); color: var(--text); font: 500 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+a { color: var(--brand-dark); }
+.scan-card { width: 100%; max-width: 560px; background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 28px 28px 20px; box-shadow: 0 12px 40px rgba(15,23,42,.14); text-align: center; }
+.scan-logo img { width: 130px; max-width: 50%; }
+.scan-status { margin: 18px 0 14px; }
+.scan-icon { width: 64px; height: 64px; margin: 0 auto 10px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(99,102,241,.14); font-size: 32px; font-weight: 800; color: var(--brand); }
+.scan-status h1 { margin: 0 0 6px; font-size: 1.35rem; font-weight: 800; }
+.scan-status p { margin: 0; color: var(--muted); }
+.spinner { width: 30px; height: 30px; border: 4px solid var(--track); border-top-color: var(--brand); border-radius: 50%; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.scan-target { display: flex; flex-direction: column; gap: 2px; text-align: left; margin: 16px 0 14px; padding: 10px 14px; background: var(--bg); border: 1px solid var(--border); border-radius: 12px; word-break: break-all; }
+.scan-target span { font-size: .7rem; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; color: var(--muted); }
+.scan-progress { height: 10px; border-radius: 999px; background: var(--track); overflow: hidden; }
+.scan-bar { width: 0; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--brand), #22d3ee); transition: width .5s ease; }
+.scan-steps { list-style: none; margin: 16px 0 6px; padding: 0; text-align: left; }
+.scan-steps li { display: grid; grid-template-columns: 22px 1fr; gap: 2px 10px; align-items: start; padding: 8px 2px; border-bottom: 1px dashed var(--border); }
+.scan-steps li:last-child { border-bottom: 0; }
+.scan-steps .dot { width: 18px; height: 18px; margin-top: 2px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: #fff; }
+.scan-steps .note { grid-column: 2; font-size: .85rem; color: var(--muted); }
+.scan-steps li.running .dot { border-color: var(--brand); border-top-color: transparent; animation: spin .8s linear infinite; }
+.scan-steps li.ok .dot { background: var(--ok); border-color: var(--ok); }
+.scan-steps li.ok .dot::after { content: "✓"; }
+.scan-steps li.warn .dot { background: var(--warn); border-color: var(--warn); }
+.scan-steps li.warn .dot::after { content: "!"; }
+.scan-steps li.threat .dot { background: var(--bad); border-color: var(--bad); }
+.scan-steps li.threat .dot::after { content: "✕"; }
+.scan-steps li.error .dot { background: var(--muted); border-color: var(--muted); }
+.scan-steps li.error .dot::after { content: "?"; }
+.scan-steps li.pending { opacity: .65; }
+.scan-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 18px 0 4px; }
+.scan-actions[hidden], .scan-force[hidden] { display: none; }
+.btn { display: inline-block; padding: 11px 22px; border-radius: 12px; border: 1px solid var(--border); background: var(--card); color: var(--brand-dark); font-weight: 700; text-decoration: none; }
+.btn.primary { background: var(--brand); border-color: var(--brand); color: #fff; box-shadow: 0 6px 16px rgba(99,102,241,.4); }
+.btn.danger { background: var(--bad); border-color: var(--bad); color: #fff; }
+.btn:hover { text-decoration: none; filter: brightness(1.06); }
+@media (prefers-color-scheme: dark) { .btn.primary { color: #0f172a; } }
+.scan-force { margin-top: 10px; font-size: .85rem; color: var(--muted); }
+.scan-force summary { cursor: pointer; }
+.scan-force a { color: var(--bad); display: inline-block; margin-top: 6px; word-break: break-all; }
+.scan-foot, .scan-noscript { margin: 14px 0 0; font-size: .8rem; color: var(--muted); }
+.state-ok .scan-icon { background: rgba(5,150,105,.16); color: var(--ok); }
+.state-warn .scan-icon { background: rgba(217,119,6,.16); color: var(--warn); }
+.state-threat .scan-icon { background: rgba(220,38,38,.16); color: var(--bad); }
+.state-threat .scan-card, .scan-card.state-threat { border-color: var(--bad); }
+.state-ok .scan-bar { background: var(--ok); }
+.state-warn .scan-bar { background: var(--warn); }
+.state-threat .scan-bar { background: var(--bad); }

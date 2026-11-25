@@ -78,6 +78,16 @@ define( 'YOURLS_URL_CONVERT', 36 );
  ** Default is false for live site. Enable when coding or before submitting a new issue */
 define( 'YOURLS_DEBUG', false );
 
+/** Malicious URL scan: before visitors are sent to a long URL, a page shows the progress of a scan and lets them
+ ** continue only if no threat is found. Set to false to redirect immediately (as before). */
+define( 'YOURLS_URL_SCAN', true );
+
+/** Optional free API keys for online reputation checks (without them, only offline checks on the address run):
+ ** - Google Safe Browsing: https://developers.google.com/safe-browsing/v4/get-started
+ ** - VirusTotal (free tier: 4 requests/minute, 500/day): https://www.virustotal.com/gui/my-apikey */
+// define( 'YOURLS_SCAN_GSB_KEY', '' );
+// define( 'YOURLS_SCAN_VT_KEY', '' );
+
 /**
 * Reserved keywords (so that generated URLs won't match them)
 * Define here negative, unwanted or potentially misleading keywords.
