@@ -56,3 +56,8 @@ a { color: var(--brand-dark); }
 @media (prefers-color-scheme: dark) { .scan-lang button[aria-pressed="true"] { color: #0f172a; } }
 .scan-lang button:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 .scan-status { clear: both; }
+
+/* Automatic redirect countdown */
+.scan-countdown { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; margin: 16px 0 0; padding: 10px 14px; border-radius: 12px; background: rgba(5,150,105,.12); color: var(--ok); font-weight: 700; }
+.scan-countdown[hidden] { display: none; }
+.link-btn { border: 0; background: none; color: var(--brand-dark); font: 700 14px system-ui, sans-serif; text-decoration: underline; cursor: pointer; padding: 2px 4px; }

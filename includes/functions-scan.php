@@ -107,6 +107,7 @@ function yourls_scan_dictionary():array {
             'risk' => 'I understand the risk', 'force' => 'Continue anyway (not recommended)',
             'noscript' => 'JavaScript is required to scan this link.', 'noscript_go' => 'Continue without scanning',
             'protected' => 'Protected by {0}', 'and' => 'and', 'language' => 'Language',
+            'redirecting' => 'No threat found. Redirecting in {0} s…', 'stop_redirect' => 'Stay on this page',
             'step_heuristic' => 'Analyzing the address (structure, protocol, risky patterns)',
             'step_gsb' => 'Checking Google Safe Browsing (malware, phishing, unwanted software)',
             'step_vt' => 'Scanning with VirusTotal (70+ security engines)',
@@ -139,6 +140,7 @@ function yourls_scan_dictionary():array {
             'risk' => 'Tôi hiểu rủi ro', 'force' => 'Vẫn tiếp tục (không khuyến nghị)',
             'noscript' => 'Cần bật JavaScript để quét liên kết này.', 'noscript_go' => 'Tiếp tục không quét',
             'protected' => 'Được bảo vệ bởi {0}', 'and' => 'và', 'language' => 'Ngôn ngữ',
+            'redirecting' => 'Không phát hiện mối đe dọa. Tự động chuyển trang sau {0} giây…', 'stop_redirect' => 'Ở lại trang này',
             'step_heuristic' => 'Phân tích địa chỉ (cấu trúc, giao thức, mẫu đáng ngờ)',
             'step_gsb' => 'Kiểm tra Google Safe Browsing (mã độc, lừa đảo, phần mềm không mong muốn)',
             'step_vt' => 'Quét bằng VirusTotal (hơn 70 bộ quét bảo mật)',
@@ -164,7 +166,7 @@ function yourls_scan_dictionary():array {
 }
 
 /**
- * Language of the scan page: ?lang=vi|en, then cookie "yourls_scan_lang", then browser language, then English.
+ * Language of the scan page: ?lang=vi|en, then cookie "yourls_scan_lang", then Vietnamese (filter 'scan_default_language').
  * Can be forced for the current request with $set.
  *
  * @param  string|null $set
@@ -173,15 +175,13 @@ function yourls_scan_dictionary():array {
 function yourls_scan_lang( $set = null ):string {
     static $lang = null;
     if( $set !== null ) {
-        $lang = in_array( $set, [ 'en', 'vi' ], true ) ? $set : 'en';
+        $lang = in_array( $set, [ 'en', 'vi' ], true ) ? $set : 'vi';
     }
     if( $lang === null ) {
-        $lang = 'en';
+        $lang = yourls_apply_filter( 'scan_default_language', 'vi' ); // Vietnamese by default
         $wanted = $_GET['lang'] ?? ( $_COOKIE['yourls_scan_lang'] ?? '' );
         if( in_array( $wanted, [ 'en', 'vi' ], true ) ) {
             $lang = $wanted;
-        } elseif( preg_match( '/^\s*vi\b/i', (string) ( $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '' ) ) ) {
-            $lang = 'vi';
         }
     }
     return $lang;
@@ -529,7 +529,7 @@ function yourls_scan_page( $keyword, $url ) {
     yourls_status_header( 200 );
     yourls_content_type_header( 'text/html' );
     header( 'Cache-Control: no-store' );
-    header( 'Vary: Accept-Language, Cookie' );
+    header( 'Vary: Cookie' );
 
     $lang   = yourls_scan_lang();
     $checks = yourls_scan_checks();
@@ -551,6 +551,8 @@ function yourls_scan_page( $keyword, $url ) {
         'lang'     => $lang,
         'dict'     => yourls_scan_dictionary(),
         'services' => $services,
+        // Seconds before the visitor is sent on automatically when nothing malicious was found (0 = never)
+        'autoredirect' => (int) yourls_apply_filter( 'scan_autoredirect_seconds', defined( 'YOURLS_SCAN_REDIRECT_DELAY' ) ? (int) YOURLS_SCAN_REDIRECT_DELAY : 5 ),
     ];
     $host = (string) parse_url( $url, PHP_URL_HOST );
     $t = function( $key ) use ( $lang ) { return yourls_esc_html( yourls_scan_t( $key, [], $lang ) ); };
@@ -583,6 +585,10 @@ function yourls_scan_page( $keyword, $url ) {
         <li data-step="<?php echo yourls_esc_attr( $id ); ?>" class="pending"><span class="dot"></span><span class="label" data-i18n="step_<?php echo yourls_esc_attr( $id ); ?>"><?php echo $t( 'step_' . $id ); ?></span><span class="note"></span></li>
         <?php } ?>
     </ul>
+    <div class="scan-countdown" id="scan-countdown" hidden>
+        <span id="scan-countdown-text"></span>
+        <button type="button" class="link-btn" id="scan-stay" data-i18n="stop_redirect"><?php echo $t( 'stop_redirect' ); ?></button>
+    </div>
     <div class="scan-actions" id="scan-actions" hidden>
         <a class="btn primary" id="scan-continue" href="<?php echo yourls_esc_url( $url ); ?>" rel="noopener noreferrer nofollow"><span data-i18n="continue"><?php echo $t( 'continue' ); ?></span> &rarr;</a>
         <a class="btn" id="scan-back" href="javascript:history.back()" data-i18n="back"><?php echo $t( 'back' ); ?></a>

@@ -11,6 +11,7 @@
     var state = null;          // 'ok' | 'warn' | 'threat' once finished
     var lang = cfg.lang === 'vi' ? 'vi' : 'en';
     var MAX_POLLS = 25, POLL_MS = 2500;
+    var countdown = null;      // { left, timer } while the automatic redirect is pending
 
     var $ = function (id) { return document.getElementById(id); };
     var bar = $('scan-bar'), progress = card.querySelector('.scan-progress');
@@ -58,6 +59,7 @@
         });
         var btns = card.querySelectorAll('.scan-lang button');
         for (var j = 0; j < btns.length; j++) btns[j].setAttribute('aria-pressed', btns[j].getAttribute('data-lang') === lang ? 'true' : 'false');
+        if (countdown) showCountdown();
         if (state) showState(); else { $('scan-title').textContent = t('title_scanning'); $('scan-text').textContent = t('text_scanning'); }
         footer();
         document.title = t('page_title') + ' — ' + document.title.split(' — ').pop();
@@ -133,6 +135,33 @@
         $('scan-title').textContent = state === 'ok' ? t('safe') : (state === 'warn' ? t('caution') : t('threat'));
         $('scan-text').textContent = state === 'ok' ? t('safe_text') : (state === 'warn' ? t('caution_text') : t('threat_text'));
     }
+    // Automatic redirect after N seconds when no threat was found (the visitor can stop it)
+    function showCountdown() {
+        $('scan-countdown-text').textContent = t('redirecting', [countdown.left]);
+    }
+    function startCountdown() {
+        var secs = parseInt(cfg.autoredirect, 10) || 0;
+        if (secs <= 0) return;
+        countdown = { left: secs, timer: null };
+        $('scan-countdown').hidden = false;
+        showCountdown();
+        countdown.timer = setInterval(function () {
+            countdown.left--;
+            if (countdown.left <= 0) {
+                clearInterval(countdown.timer);
+                window.location.href = $('scan-continue').href;
+                return;
+            }
+            showCountdown();
+        }, 1000);
+    }
+    function stopCountdown() {
+        if (!countdown) return;
+        clearInterval(countdown.timer);
+        countdown = null;
+        $('scan-countdown').hidden = true;
+    }
+    $('scan-stay').addEventListener('click', stopCountdown);
     function finish() {
         var statuses = ids.map(function (s) { return results[s] ? results[s].status : 'ok'; });
         state = statuses.indexOf('threat') !== -1 ? 'threat'
@@ -148,6 +177,7 @@
             $('scan-force').hidden = false;
         } else {
             $('scan-continue').focus();
+            if (state === 'ok') startCountdown(); // nothing found: continue automatically; with notes/errors the visitor decides
         }
     }
 
